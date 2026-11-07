@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>如果用九个字谈青春</title>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --bg-light: #fbf8f2;
+    --ink: #1f1d1a;
+    --ink-soft: #6b6459;
+    --accent: #b4552f;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Songti SC", "STSong", "Noto Serif SC", "SimSun",
+                 "PingFang SC", "Microsoft YaHei", serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ==================== 背景图层 ==================== */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 1.4s ease;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: saturate(.9);
+    pointer-events: none;
+  }
+  .bg-layer.on { opacity: .34; }
+
+  .veil {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at 50% 45%, rgba(244,241,234,.62) 0%, rgba(244,241,234,.80) 60%, rgba(244,241,234,.92) 100%);
+  }
+
+  /* ==================== 开屏页 ==================== */
+  .splash {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    cursor: pointer;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 45%,
+                #fdfaf4 0%, #f1ece2 55%, #e6e0d3 100%);
+    transition: opacity .9s ease, filter .9s ease, transform .9s ease;
+  }
+  .splash.hide {
+    opacity: 0;
+    filter: blur(8px);
+    transform: scale(1.05);
+    pointer-events: none;
+  }
+
+  .float-word {
+    position: absolute;
+    white-space: nowrap;
+    pointer-events: none;
+    color: var(--ink);
+    opacity: 0;
+    animation:
+      wordIn .9s ease var(--delay, 0s) forwards,
+      drift var(--drift-dur, 9s) ease-in-out var(--delay, 0s) infinite;
+    will-change: opacity, transform;
+  }
+  @keyframes wordIn { to { opacity: var(--o, .4); } }
+  @keyframes drift {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50%      { transform: translate3d(var(--dx, 4px), var(--dy, -10px), 0); }
+  }
+
+  .splash-title {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    z-index: 3;
+    white-space: nowrap;
+    font-weight: 500;
+    font-size: clamp(22px, 5.6vw, 62px);
+    letter-spacing: .18em;
+    text-indent: .18em;
+    color: var(--ink);
+    animation: titleIn 1.6s cubic-bezier(.2, .8, .2, 1) both;
+  }
+  .splash-title::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(1200px, 170%);
+    height: min(380px, 62vh);
+    transform: translate(-50%, -50%);
+    background: radial-gradient(ellipse at center,
+                rgba(250, 247, 240, .96) 0%,
+                rgba(250, 247, 240, .72) 48%,
+                rgba(250, 247, 240, 0) 74%);
+    z-index: -1;
+    pointer-events: none;
+  }
+  @keyframes titleIn {
+    from { opacity: 0; letter-spacing: .55em; filter: blur(6px); }
+    to   { opacity: 1; letter-spacing: .18em; filter: blur(0); }
+  }
+
+  .splash-hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 7%;
+    z-index: 3;
+    margin: 0;
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: .34em;
+    text-indent: .34em;
+    color: var(--ink-soft);
+    animation: hintPulse 2.8s ease-in-out infinite;
+  }
+  @keyframes hintPulse {
+    0%, 100% { opacity: .35; }
+    50%      { opacity: .9; }
+  }
+
+  /* ==================== 主界面 ==================== */
+  .app {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .8s ease .1s;
+  }
+  .app.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* ---------- 工具栏 ---------- */
+  .toolbar {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px clamp(14px, 4vw, 48px);
+    border-bottom: 1px solid rgba(31, 29, 26, .07);
+    flex-shrink: 0;
+  }
+
+  .icon-btn {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(31, 29, 26, .16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .72);
+    color: var(--ink);
+    font: inherit;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    transition: .22s ease;
+  }
+  .icon-btn:hover {
+    background: #fff;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .icon-btn:active { transform: scale(.95); }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    max-width: 520px;
+  }
+
+  #search {
+    width: 100%;
+    padding: 11px 18px;
+    border: 1px solid rgba(31, 29, 26, .16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .72);
+    font: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: .25s ease;
+  }
+  #search::placeholder { color: #a9a196; }
+  #search:focus {
+    border-color: var(--accent);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(180, 85, 47, .1);
+  }
+
+  .btn {
+    padding: 11px 20px;
+    border: 1px solid rgba(31, 29, 26, .16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .72);
+    font: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: .22s ease;
+  }
+  .btn:hover {
+    background: #fff;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn:active { transform: scale(.97); }
+
+  /* ---------- 搜索结果下拉 ---------- */
+  .result-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    right: 0;
+    max-height: 52vh;
+    overflow-y: auto;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid rgba(31, 29, 26, .08);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(31, 29, 26, .18);
+    display: none;
+    z-index: 30;
+  }
+  .result-panel.open { display: block; }
+
+  .result-item {
+    padding: 11px 14px;
+    border-radius: 10px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink);
+    cursor: pointer;
+    white-space: pre-line;
+    transition: background .16s ease;
+  }
+  .result-item:hover,
+  .result-item.active { background: rgba(180, 85, 47, .09); }
+  .result-item mark {
+    background: rgba(180, 85, 47, .18);
+    color: var(--accent);
+    border-radius: 3px;
+    padding: 0 2px;
+  }
+  .result-empty {
+    padding: 18px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- 舞台 ---------- */
+  .stage {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(20px, 6vw, 80px);
+    cursor: pointer;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .float-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .mist-word {
+    position: absolute;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    color: var(--ink);
+    padding: 2px 9px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .30);
+    filter: blur(var(--blur, 3px));
+    text-shadow: 0 0 18px rgba(255, 255, 255, .9);
+    opacity: 0;
+    animation:
+      mistIn 1.6s ease var(--delay, 0s) forwards,
+      mistDrift var(--dur, 11s) ease-in-out var(--delay, 0s) infinite;
+    will-change: opacity, transform;
+  }
+  @keyframes mistIn { to { opacity: var(--o, .35); } }
+  @keyframes mistDrift {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50%      { transform: translate3d(var(--dx, 6px), var(--dy, -12px), 0); }
+  }
+
+  .card-stack {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 100%;
+  }
+  .card-stack::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 160%;
+    height: 240%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(ellipse at center,
+                rgba(250, 247, 240, .92) 0%,
+                rgba(250, 247, 240, .55) 45%,
+                rgba(250, 247, 240, 0) 72%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .card {
+    grid-area: 1 / 1;
+    margin: 0;
+    max-width: min(88vw, 20em);
+    text-align: center;
+    line-height: 1.62;
+    letter-spacing: .05em;
+    color: var(--ink);
+    word-break: break-word;
+    opacity: 0;
+    will-change: opacity, filter, transform;
+  }
+  .card.in  { animation: softIn 1.55s cubic-bezier(.22, .61, .36, 1) both; }
+  .card.out { animation: softOut .85s ease forwards; }
+
+  @keyframes softIn {
+    0%   { opacity: 0; filter: blur(18px); transform: translateY(14px) scale(.985); }
+    55%  { opacity: 1; filter: blur(3px);  transform: translateY(2px)  scale(1); }
+    100% { opacity: 1; filter: blur(0);    transform: none; }
+  }
+  @keyframes softOut {
+    from { opacity: 1; filter: blur(0); }
+    to   { opacity: 0; filter: blur(12px); transform: translateY(-10px); }
+  }
+
+  /* 卡片里的署名行 */
+  .card .uq-sign {
+    display: block;
+    margin-top: .55em;
+    font-size: .58em;
+    letter-spacing: .12em;
+    color: var(--ink-soft);
+    text-align: right;
+  }
+
+  /* ---------- 底部栏 ---------- */
+  .bottom-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 clamp(14px, 4vw, 48px) 16px;
+    font-size: 12px;
+    letter-spacing: .12em;
+    color: #a9a196;
+  }
+
+  .bottom-links {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .about-link {
+    border: none;
+    background: none;
+    padding: 6px 0;
+    font: inherit;
+    font-size: 13px;
+    letter-spacing: .16em;
+    color: var(--ink-soft);
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    transition: .22s ease;
+    white-space: nowrap;
+  }
+  .about-link:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ==================== 通用弹窗外壳 ==================== */
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: none;
+    place-items: center;
+    padding: 20px;
+    background: rgba(31, 29, 26, .28);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .modal.open { display: grid; animation: fadeIn .3s ease both; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal-card {
+    width: min(560px, 100%);
+    max-height: 86vh;
+    overflow-y: auto;
+    padding: 26px;
+    border-radius: 20px;
+    background: var(--bg-light);
+    box-shadow: 0 30px 70px rgba(31, 29, 26, .28);
+    animation: popIn .35s cubic-bezier(.2, .85, .25, 1) both;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: translateY(16px) scale(.98); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .modal-card h3 {
+    margin: 0 0 8px;
+    font-size: 19px;
+    font-weight: 500;
+    letter-spacing: .1em;
+  }
+  .modal-desc {
+    margin: 0 0 18px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--ink-soft);
+  }
+
+  .modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .modal-actions .btn { font-size: 14px; padding: 10px 16px; }
+
+  #imgCount {
+    margin: 0 0 12px;
+    font-size: 13px;
+    letter-spacing: .06em;
+    color: var(--ink-soft);
+  }
+
+  .thumb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .thumb-wrap { position: relative; }
+  .thumb-wrap .thumb {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    background-size: cover;
+    background-position: center;
+    background-color: #e7e1d5;
+  }
+  .thumb-del {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(31, 29, 26, .78);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    padding: 0;
+    transition: .18s ease;
+  }
+  .thumb-del:hover { background: var(--accent); transform: scale(1.08); }
+
+  .modal-close {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(31, 29, 26, .16);
+    border-radius: 999px;
+    background: #fff;
+    font: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    cursor: pointer;
+    transition: .22s ease;
+  }
+  .modal-close:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ==================== 投稿弹窗 ==================== */
+  .uw-tip {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--ink-soft);
+  }
+
+  .uw-sample {
+    padding: 14px 16px;
+    margin: 0 0 14px;
+    border-radius: 12px;
+    background: rgba(31, 29, 26, .045);
+    font-size: 14px;
+    line-height: 1.75;
+    color: #3c3831;
+  }
+  .uw-sample-line1 { text-align: center; letter-spacing: .06em; }
+  .uw-sample-line2 {
+    margin-top: 6px;
+    text-align: right;
+    font-size: 13px;
+    letter-spacing: .1em;
+    color: var(--ink-soft);
+  }
+
+  .uw-input {
+    display: block;
+    width: 100%;
+    min-height: 106px;
+    resize: vertical;
+    padding: 12px 14px;
+    border: 1px solid rgba(31, 29, 26, .16);
+    border-radius: 12px;
+    background: #fff;
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--ink);
+    outline: none;
+    transition: .22s ease;
+  }
+  .uw-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(180, 85, 47, .1);
+  }
+
+  .uw-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .uw-actions button {
+    flex: 1;
+    padding: 11px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(31, 29, 26, .16);
+    background: #fff;
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    cursor: pointer;
+    transition: .22s ease;
+  }
+  .uw-actions button:hover { border-color: var(--accent); color: var(--accent); }
+  .uw-actions #uwSubmit {
+    background: var(--ink);
+    color: #fbf8f2;
+    border-color: var(--ink);
+  }
+  .uw-actions #uwSubmit:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .uw-msg {
+    margin-top: 12px;
+    min-height: 1.3em;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--accent);
+  }
+  .uw-msg.ok { color: #4a7c59; }
+
+  /* ==================== 关于页 ==================== */
+  .about-page {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: var(--bg-light);
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(14px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+  .about-page.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+
+  .about-back {
+    position: fixed;
+    top: 18px;
+    left: clamp(14px, 4vw, 48px);
+    z-index: 2;
+    padding: 9px 18px;
+    border: 1px solid rgba(31, 29, 26, .16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .8);
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    cursor: pointer;
+    transition: .22s ease;
+  }
+  .about-back:hover { background: #fff; border-color: var(--accent); color: var(--accent); }
+
+  .about-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 96px 28px 96px;
+    line-height: 1.9;
+  }
+  .about-inner h2 {
+    margin: 0 0 26px;
+    font-size: clamp(24px, 4vw, 34px);
+    font-weight: 500;
+    letter-spacing: .14em;
+  }
+  .about-inner p {
+    margin: 0 0 18px;
+    font-size: 16px;
+    color: #3c3831;
+  }
+  .about-lead { color: var(--ink-soft); }
+
+  /* ==================== 响应式 ==================== */
+  @media (max-width: 680px) {
+    .toolbar { flex-wrap: wrap; padding: 10px 14px; gap: 8px; }
+    .search-wrap { order: 3; flex: 1 0 100%; max-width: none; }
+    .btn { padding: 10px 16px; font-size: 14px; }
+    #search { padding: 10px 15px; font-size: 14px; }
+    .bottom-bar .hint { display: none; }
+    .bottom-bar { justify-content: center; }
+    .bottom-links { gap: 16px; }
+    .card-stack::before { width: 190%; height: 260%; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- 背景图两层，交叉淡入 -->
+  <div class="bg-layer" id="bgA"></div>
+  <div class="bg-layer" id="bgB"></div>
+  <div class="veil"></div>
+
+  <!-- ==================== 开屏页 ==================== -->
+  <div class="splash" id="splash">
+    <div id="wordLayer" aria-hidden="true"></div>
+    <h1 class="splash-title">如果用九个字谈青春</h1>
+    <p class="splash-hint">轻 触 屏 幕 开 始</p>
+  </div>
+
+  <!-- ==================== 主界面 ==================== -->
+  <main class="app" id="app">
+    <header class="toolbar">
+      <button class="icon-btn" id="backBtn" title="返回开屏页" aria-label="返回开屏页">←</button>
+
+      <div class="search-wrap">
+        <input id="search" type="search" placeholder="输入关键字，找回那句话…" autocomplete="off" />
+        <div class="result-panel" id="resultPanel"></div>
+      </div>
+
+      <button class="btn" id="randomBtn">随机一句</button>
+      <button class="btn" id="galleryBtn">图库</button>
+    </header>
+
+    <section class="stage" id="stage">
+      <div class="float-layer" id="floatLayer" aria-hidden="true"></div>
+      <div class="card-stack">
+        <p class="card" id="cardA"></p>
+        <p class="card" id="cardB"></p>
+      </div>
+    </section>
+
+    <footer class="bottom-bar">
+      <span class="hint">单击屏幕随机一句 · 空格随机 · / 搜索</span>
+      <div class="bottom-links">
+        <button class="about-link" id="writeBtn">写下你的九个字 →</button>
+        <button class="about-link" id="aboutBtn">回到那天下午 →</button>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ==================== 关于页（内容由你自己写） ==================== -->
+  <section class="about-page" id="aboutPage">
+    <button class="about-back" id="aboutBack">← 返回</button>
+    <article class="about-inner">
+      <h2>回到那天下午</h2>
+
+      <!-- ↓↓↓ 在这里写你的内容 ↓↓↓ -->
+      <p class="about-lead">你们还记得那个下午吗？</p>
+      <p>我们依旧聚集在滚动的大屏下谈天说地</p>
+      <p>大屏上是每天不断减少的倒计时</p>
+      <p>那一天屏幕上的句子是：</p>
+      <p>青春不就是这九个字吗？</p>
+      <p>“拼了命，</p>
+      <p>尽了兴，</p>
+      <p>圆了梦。”</p>
+      <p>可独属于我们每一个人的青春真的都是这相同的九个字吗？</p>
+      <p>或许我们每个人都能用九个字概括我们的青春吧？</p>
+      <p>于是，这场神奇的“九个字青春”漂流就开始了。</p>
+      <!-- ↑↑↑ 在这里写你的内容 ↑↑↑ -->
+    </article>
+  </section>
+
+  <!-- ==================== 图库面板 ==================== -->
+  <div class="modal" id="galleryModal">
+    <div class="modal-card">
+      <h3>背景图库</h3>
+      <p class="modal-desc">
+        内置图片所有人可见；你上传的图片会永久保存在本机浏览器，刷新后依然在。
+        每次切换句子会从整个图库随机抽一张，自动铺满裁切。
+      </p>
+      <div class="modal-actions">
+        <button class="btn" id="pickFolder">导入文件夹</button>
+        <button class="btn" id="pickFiles">选择图片</button>
+        <button class="btn" id="clearImgs">清空我上传的</button>
+      </div>
+      <p id="imgCount">图库加载中…</p>
+      <div class="thumb-grid" id="thumbGrid"></div>
+      <button class="modal-close" id="galleryClose">关闭</button>
+    </div>
+  </div>
+
+  <!-- ==================== 投稿弹窗 ==================== -->
+  <div class="modal" id="writeModal">
+    <div class="modal-card">
+      <h3>写下你的青春的九个字</h3>
+      <p class="uw-tip">第一行写句子，第二行写署名。格式就像这样：</p>
+      <div class="uw-sample">
+        <div class="uw-sample-line1">我的青春不止九个字</div>
+        <div class="uw-sample-line2">——202601</div>
+      </div>
+      <textarea class="uw-input" id="uwInput" maxlength="120"
+        placeholder="我的青春不止九个字&#10;——202601"></textarea>
+      <div class="uw-actions">
+        <button type="button" id="uwSubmit">收进句子池</button>
+        <button type="button" id="uwCancel">取消</button>
+      </div>
+      <div class="uw-msg" id="uwMsg"></div>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" accept="image/*" multiple hidden />
+  <input type="file" id="folderInput" accept="image/*" multiple webkitdirectory directory hidden />
+
+<script>
+/* ============================================================
+   ① 你的句子放这里，一句一行，用英文逗号分隔
+   ============================================================ */
+const SENTENCES = [
+  "原来这就是所谓世界。————狂想",
+  "蓦然回首，舟已过万山。————雪怨尘",
+  "‘一意孤行’的理想主义。————Esmac",
+  "人生恰似飞鸿踏雪泥。————CH2ClCOOH",
+  "疯狂星期四，V我50！————yg",
+  "笑口常开兮，霸气侧漏。————·♾️",
+  "青涩仓皇遮不住阳光。————楼",
+  "一纸一笔皆为你的心。————不负青春不负卿",
+  "重生之我在运康一中。————花夕泊",
+  "一直做无法实现的梦。————竭诚",
+  "每分每秒都恰到好处。————不食糖饼",
+  "无言热烈，致似水柔情。————苯铭",
+  "希望拥有羽毛和翅膀。————折雨",
+  "看青春正好，满天繁星。————客亦醉春风",
+  "溪声千回，惟细数时光。————槐叙",
+  "苦中作乐的逐梦之旅。————枫华曳",
+  "成为无可替代的我们。————Hyacine嘟",
+  "花未开亦无悔，等月圆。————一根渡鸦羽",
+  "饮罢乾坤，心中留热气。————Eternity",
+  "要好好吃饭，天天开心。————野芍",
+  "要认真睡觉，放平心态。————Hucky",
+  "三国杀，一战成名，启动！————xw",
+  "轰轰烈烈地大干一番。————方将军",
+  "盛开于风起，沐浴骄阳。————zlc",
+  "未知拂晓，唯彻夜前行。————凤鸣玉碎",
+  "追风，逐日，听雨，少年游。————青山拜帖（osh）",
+  "只留三寸赴雪月风花。————voidvein7",
+  "但春春，冬冬，行行，止止。————白灼",
+  "无祈，虽千万人吾往矣。————待月归",
+  "有梦清欢，数载烟火气。————隐雨伞",
+  "一场旷日持久的幻觉。",
+  "取道于黑夜，抵达黎明。————先知",
+  "土壤孵化着向上翅膀。————ljx",
+  "愿 晨窗暖日 一身花气。————THREE",
+  "丘壑沙起，入星河璀璨。————sky",
+  "平淡细碎的‘壮阔’草稿。————运",
+  "我的青春式由我做主。————lx",
+  "懵懵懂懂又绚绚流光。————H",
+  "想念变成空气在叹息。————（ ）",
+  "幸福莫过于睁眼遇见妳。————钟情于"
+];
+
+/* ============================================================
+   ② 内置背景图：改这里
+   把图片文件和网页放在一起（或放进子文件夹），一行写一个路径。
+   例如图片在网页同级的 assets 文件夹里，就写 'assets/1.jpg'；
+   直接放在网页旁边，就写 '1.jpg'。
+   路径写错会自动剔除，不会影响其他图片。
+   ============================================================ */
+const DEFAULT_IMAGES = [
+  'assets/1.jpg',
+  'assets/2.jpg',
+  'assets/3.jpg',
+  'assets/4.jpg',
+  'assets/5.jpg',
+  'assets/6.jpg',
+  'assets/7.jpg',
+  'assets/8.jpg',
+  'assets/9.jpg',
+  'assets/10.jpg',
+  'assets/11.jpg',
+  'assets/12.jpg',
+  'assets/13.jpg',
+  'assets/14.jpg',
+  'assets/15.jpg',
+  'assets/16.jpg',
+  'assets/17.jpg',
+  'assets/18.jpg',
+  'assets/19.jpg',
+  'assets/20.jpg',
+  'assets/21.jpg',
+  'assets/22.jpg',
+  'assets/23.jpg',
+  'assets/24.jpg',
+  'assets/25.jpg',
+  'assets/26.jpg',
+  'assets/27.jpg',
+  'assets/28.jpg',
+  'assets/29.jpg',
+  'assets/30.jpg',
+  'assets/31.jpg',
+  'assets/32.jpg',
+  'assets/33.jpg',
+  'assets/34.jpg',
+  'assets/35.jpg',
+  'assets/36.jpg',
+  'assets/37.jpg',
+  'assets/38.jpg',
+  'assets/39.jpg',
+  'assets/40.jpg',
+  'assets/41.jpg',
+  'assets/42.jpg',
+  'assets/43.jpg',
+  'assets/44.jpg',
+  'assets/45.jpg',
+  'assets/46.jpg',
+  'assets/47.jpg',
+  'assets/48.jpg',
+  'assets/49.jpg',
+  'assets/50.jpg',
+  'assets/51.jpg',
+  'assets/52.jpg',
+  'assets/53.jpg',
+  'assets/54.jpg',
+  'assets/55.jpg',
+  'assets/56.jpg',
+  'assets/57.jpg',
+  'assets/58.jpg',
+  'assets/59.jpg',
+  'assets/60.jpg',
+  'assets/61.jpg',
+  'assets/62.jpg'
+  
+];
+
+/* ============================================================
+   ③ 工具函数
+   ============================================================ */
+const $ = (s) => document.querySelector(s);
+const rand = (a, b) => a + Math.random() * (b - a);
+const randInt = (a, b) => Math.floor(rand(a, b + 1));
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = randInt(0, i);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function debounce(fn, wait) {
+  let t;
+  return function (...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), wait);
+  };
+}
+
+// 浮句里把换行压成空格，并做长度截断
+const flatText = (s) => String(s).replace(/\s*\n+\s*/g, '　');
+const clipText = (s, n) => (s.length > n ? s.slice(0, n) + '…' : s);
+
+/* ============================================================
+   ④ 读取本机已投稿的句子，并入句子池
+   ============================================================ */
+const OWN_KEY = 'youth_own_lines_v1';
+const MAX_OWN_SENTENCES = 500;
+const MAX_LINE_LEN = 40;
+
+function loadOwnSentences() {
+  try {
+    const raw = localStorage.getItem(OWN_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    return arr.filter((s) => typeof s === 'string' && s.trim().length);
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveOwnSentences(arr) {
+  try {
+    localStorage.setItem(OWN_KEY, JSON.stringify(arr));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+loadOwnSentences().forEach((text) => {
+  if (!SENTENCES.includes(text)) SENTENCES.push(text);
+});
+
+/* ============================================================
+   ⑤ DOM 引用
+   ============================================================ */
+const splash = $('#splash');
+const wordLayer = $('#wordLayer');
+const app = $('#app');
+const stage = $('#stage');
+const floatLayer = $('#floatLayer');
+const cardA = $('#cardA');
+const cardB = $('#cardB');
+const searchInput = $('#search');
+const resultPanel = $('#resultPanel');
+const aboutPage = $('#aboutPage');
+const galleryModal = $('#galleryModal');
+const writeModal = $('#writeModal');
+const fileInput = $('#fileInput');
+const folderInput = $('#folderInput');
+const imgCount = $('#imgCount');
+const thumbGrid = $('#thumbGrid');
+
+/* ============================================================
+   ⑥ 开屏页：随机散布
+   ============================================================ */
+let splashActive = true;
+let splashReadyAt = 0;
+
+function layoutSplash() {
+  wordLayer.innerHTML = '';
+
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const cx = W / 2;
+  const cy = H / 2;
+
+  const protectRx = Math.min(W * 0.36, 420);
+  const protectRy = Math.min(H * 0.21, 190);
+
+  const isSmall = W < 700;
+  const maxWords = isSmall ? 16 : (W < 1100 ? 26 : 36);
+
+  const pool = shuffle(SENTENCES);
+  const placed = [];
+
+  let idx = 0;
+  let attempts = 0;
+  const maxAttempts = maxWords * 70;
+
+  while (placed.length < maxWords && attempts < maxAttempts) {
+    attempts++;
+
+    const text = clipText(flatText(pool[idx % pool.length]), 26);
+    const fs = isSmall ? rand(11, 15) : rand(12, 22);
+
+    const el = document.createElement('span');
+    el.className = 'float-word';
+    el.textContent = text;
+    el.style.fontSize = fs.toFixed(1) + 'px';
+    el.style.left = '-9999px';
+    el.style.top = '-9999px';
+    el.style.visibility = 'hidden';
+    wordLayer.appendChild(el);
+
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+
+    let ok = false;
+    let x = 0, y = 0;
+
+    for (let t = 0; t < 40; t++) {
+      x = rand(14, Math.max(15, W - w - 14));
+      y = rand(14, Math.max(15, H - h - 14));
+
+      const dx = (x + w / 2 - cx) / protectRx;
+      const dy = (y + h / 2 - cy) / protectRy;
+      if (dx * dx + dy * dy < 1) continue;
+
+      const pad = isSmall ? 7 : 10;
+      let hit = false;
+      for (const p of placed) {
+        if (x < p.x + p.w + pad && x + w + pad > p.x &&
+            y < p.y + p.h + pad && y + h + pad > p.y) {
+          hit = true;
+          break;
+        }
+      }
+      if (hit) continue;
+
+      ok = true;
+      break;
+    }
+
+    if (!ok) {
+      el.remove();
+      idx++;
+      continue;
+    }
+
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.visibility = 'visible';
+    el.style.setProperty('--o', rand(0.09, 0.62).toFixed(3));
+    el.style.setProperty('--delay', rand(0.05, 0.95).toFixed(2) + 's');
+    el.style.setProperty('--drift-dur', rand(7, 15).toFixed(1) + 's');
+    el.style.setProperty('--dx', rand(-9, 9).toFixed(1) + 'px');
+    el.style.setProperty('--dy', rand(-14, 6).toFixed(1) + 'px');
+
+    if (Math.random() < 0.12) el.style.color = 'var(--accent)';
+
+    placed.push({ x, y, w, h });
+    idx++;
+  }
+}
+
+/* ============================================================
+   ⑦ 开屏 ⇄ 主界面
+   ============================================================ */
+function enterApp() {
+  if (!splashActive) return;
+  splashActive = false;
+  splash.classList.add('hide');
+  setTimeout(() => { if (!splashActive) splash.style.display = 'none'; }, 1000);
+  app.classList.add('visible');
+
+  if (!app.dataset.started) {
+    app.dataset.started = '1';
+    rollOnce();
+  }
+}
+
+function backToSplash() {
+  app.classList.remove('visible');
+  closePanel();
+
+  splashActive = true;
+  splashReadyAt = Date.now() + 900;
+  splash.style.display = '';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => splash.classList.remove('hide'));
+  });
+  layoutSplash();
+}
+
+splash.addEventListener('click', () => {
+  if (!splashActive) return;
+  if (Date.now() < splashReadyAt) return;
+  enterApp();
+});
+
+$('#backBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  backToSplash();
+});
+
+/* ============================================================
+   ⑧ 中心卡片渲染（支持正文 + 右对齐署名）
+   ============================================================ */
+let cardFront = cardA;
+let cardBack = cardB;
+
+function fitFontSize(text) {
+  const n = text.length;
+  let size;
+  if (n <= 8) size = 46;
+  else if (n <= 14) size = 38;
+  else if (n <= 22) size = 30;
+  else if (n <= 34) size = 24;
+  else if (n <= 50) size = 20;
+  else size = 17;
+
+  const vw = window.innerWidth;
+  if (vw < 700) size *= 0.72;
+  if (vw < 420) size *= 0.85;
+  return Math.round(size);
+}
+
+function showText(text) {
+  const incoming = cardBack;
+  const outgoing = cardFront;
+
+  const lines = String(text).replace(/\r/g, '').split('\n');
+  const body = (lines[0] || '').trim();
+  const sign = lines.slice(1).join(' ').trim();
+
+  let html = escapeHtml(body);
+  if (sign) {
+    html += '<span class="uq-sign">' + escapeHtml(sign) + '</span>';
+  }
+  incoming.innerHTML = html;
+  incoming.style.fontSize = fitFontSize(body) + 'px';
+
+  incoming.classList.remove('out');
+  incoming.classList.remove('in');
+  void incoming.offsetWidth;
+  incoming.classList.add('in');
+
+  if (outgoing.textContent) {
+    outgoing.classList.remove('in');
+    outgoing.classList.remove('out');
+    void outgoing.offsetWidth;
+    outgoing.classList.add('out');
+  }
+
+  cardFront = incoming;
+  cardBack = outgoing;
+}
+
+/* ============================================================
+   ⑨ 四周毛玻璃浮句
+   ============================================================ */
+function layoutFloating(excludeIndex = -1) {
+  floatLayer.innerHTML = '';
+
+  const W = floatLayer.clientWidth;
+  const H = floatLayer.clientHeight;
+  if (!W || !H) return;
+
+  const cx = W / 2;
+  const cy = H / 2;
+  const protectRx = Math.min(W * 0.32, 400);
+  const protectRy = Math.min(H * 0.25, 190);
+
+  const isSmall = W < 700;
+  const maxWords = isSmall ? 8 : 15;
+
+  const pool = SENTENCES.filter((_, i) => i !== excludeIndex);
+  if (!pool.length) return;
+  const shuffled = shuffle(pool);
+
+  const placed = [];
+  let attempts = 0;
+  const maxAttempts = maxWords * 70;
+  let idx = 0;
+
+  while (placed.length < maxWords && attempts < maxAttempts) {
+    attempts++;
+    const text = clipText(flatText(shuffled[idx % shuffled.length]), 24);
+
+    const fs = isSmall ? rand(11, 15) : rand(12, 19);
+
+    const el = document.createElement('span');
+    el.className = 'mist-word';
+    el.textContent = text;
+    el.style.fontSize = fs.toFixed(1) + 'px';
+    el.style.left = '-9999px';
+    el.style.top = '-9999px';
+    el.style.visibility = 'hidden';
+    floatLayer.appendChild(el);
+
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+
+    let ok = false;
+    let x = 0, y = 0;
+
+    for (let t = 0; t < 36; t++) {
+      x = rand(8, Math.max(9, W - w - 8));
+      y = rand(8, Math.max(9, H - h - 8));
+
+      const dx = (x + w / 2 - cx) / protectRx;
+      const dy = (y + h / 2 - cy) / protectRy;
+      if (dx * dx + dy * dy < 1) continue;
+
+      const pad = isSmall ? 8 : 12;
+      let hit = false;
+      for (const p of placed) {
+        if (x < p.x + p.w + pad && x + w + pad > p.x &&
+            y < p.y + p.h + pad && y + h + pad > p.y) {
+          hit = true;
+          break;
+        }
+      }
+      if (hit) continue;
+
+      ok = true;
+      break;
+    }
+
+    if (!ok) {
+      el.remove();
+      idx++;
+      continue;
+    }
+
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.visibility = 'visible';
+    el.style.setProperty('--o', rand(0.18, 0.46).toFixed(3));
+    el.style.setProperty('--blur', rand(2.5, 5).toFixed(2) + 'px');
+    el.style.setProperty('--delay', rand(0, 0.5).toFixed(2) + 's');
+    el.style.setProperty('--dur', rand(8, 16).toFixed(1) + 's');
+    el.style.setProperty('--dx', rand(-8, 8).toFixed(1) + 'px');
+    el.style.setProperty('--dy', rand(-14, 6).toFixed(1) + 'px');
+
+    placed.push({ x, y, w, h });
+    idx++;
+  }
+}
+
+/* ============================================================
+   ⑩ 句子渲染入口
+   ============================================================ */
+let currentIndex = -1;
+
+function renderSentence(index) {
+  const text = SENTENCES[index];
+  if (text == null) return;
+
+  currentIndex = index;
+  showText(text);
+  layoutFloating(index);
+  applyRandomBackground();
+}
+
+function pickRandomIndex() {
+  if (SENTENCES.length === 0) return -1;
+  if (SENTENCES.length === 1) return 0;
+
+  let i;
+  do {
+    i = randInt(0, SENTENCES.length - 1);
+  } while (i === currentIndex);
+  return i;
+}
+
+function rollOnce() {
+  const i = pickRandomIndex();
+  if (i < 0) {
+    showText('（还没有句子哦）');
+    return;
+  }
+  renderSentence(i);
+}
+
+stage.addEventListener('click', rollOnce);
+$('#randomBtn').addEventListener('click', rollOnce);
+
+/* ============================================================
+   ⑪ 搜索
+   ============================================================ */
+function openPanel(html) {
+  resultPanel.innerHTML = html;
+  resultPanel.classList.add('open');
+}
+function closePanel() {
+  resultPanel.classList.remove('open');
+  resultPanel.innerHTML = '';
+}
+
+function highlight(text, q) {
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return escapeHtml(text);
+  return escapeHtml(text.slice(0, i)) +
+    '<mark>' + escapeHtml(text.slice(i, i + q.length)) + '</mark>' +
+    escapeHtml(text.slice(i + q.length));
+}
+
+function doSearch() {
+  const q = searchInput.value.trim();
+  if (!q) { closePanel(); return; }
+
+  const ql = q.toLowerCase();
+  const matches = [];
+  SENTENCES.forEach((s, i) => {
+    if (s.toLowerCase().includes(ql)) matches.push(i);
+  });
+
+  if (!matches.length) {
+    openPanel('<div class="result-empty">没有找到含「' + escapeHtml(q) + '」的句子</div>');
+    return;
+  }
+
+  const LIMIT = 200;
+  const shown = matches.slice(0, LIMIT);
+
+  let html = shown.map((i) =>
+    '<div class="result-item" data-idx="' + i + '">' +
+      highlight(SENTENCES[i], q) +
+    '</div>'
+  ).join('');
+
+  if (matches.length > LIMIT) {
+    html += '<div class="result-empty">还有 ' + (matches.length - LIMIT) +
+            ' 条，请输入更具体的关键字</div>';
+  }
+
+  openPanel(html);
+}
+
+searchInput.addEventListener('input', debounce(doSearch, 120));
+searchInput.addEventListener('focus', () => {
+  if (searchInput.value.trim()) doSearch();
+});
+
+resultPanel.addEventListener('click', (e) => {
+  const item = e.target.closest('.result-item');
+  if (!item) return;
+  const idx = Number(item.dataset.idx);
+  renderSentence(idx);
+  closePanel();
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.search-wrap')) closePanel();
+});
+
+/* ============================================================
+   ⑫ 关于页「回到那天下午」
+   ============================================================ */
+$('#aboutBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  aboutPage.classList.add('open');
+  aboutPage.scrollTop = 0;
+});
+
+$('#aboutBack').addEventListener('click', () => {
+  aboutPage.classList.remove('open');
+});
+
+/* ============================================================
+   ⑬ 背景图库：内置图 + 用户上传（IndexedDB 永久保存）
+   ============================================================ */
+const DB_NAME = 'youth_bg_db';
+const DB_VER = 1;
+const STORE = 'images';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    if (!('indexedDB' in window)) { reject(new Error('no indexedDB')); return; }
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE)) {
+        db.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbAll() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbAdd(record) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const req = tx.objectStore(STORE).add(record);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbDelete(id) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const req = tx.objectStore(STORE).delete(id);
+    req.onsuccess = () => resolve(true);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbClear() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const req = tx.objectStore(STORE).clear();
+    req.onsuccess = () => resolve(true);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+const bgA = $('#bgA');
+const bgB = $('#bgB');
+const bgEls = [bgA, bgB];
+let bgIdx = 0;
+
+// 图库池：{ key, name, url, own, id?, revoke? }
+const imagePool = [];
+
+function applyRandomBackground() {
+  if (!imagePool.length) return;
+
+  const img = imagePool[randInt(0, imagePool.length - 1)];
+  const next = bgEls[bgIdx];
+  const prev = bgEls[1 - bgIdx];
+
+  next.style.backgroundImage = 'url("' + img.url + '")';
+  next.style.backgroundPosition = randInt(15, 85) + '% ' + randInt(15, 85) + '%';
+  next.classList.add('on');
+  prev.classList.remove('on');
+
+  bgIdx = 1 - bgIdx;
+}
+
+function updateGalleryUI() {
+  const ownCount = imagePool.filter((i) => i.own).length;
+  const defCount = imagePool.length - ownCount;
+
+  imgCount.textContent =
+    `内置 ${defCount} 张 · 你上传的 ${ownCount} 张（都会自动随机循环）`;
+
+  thumbGrid.innerHTML = '';
+  const frag = document.createDocumentFragment();
+
+  imagePool.slice(0, 90).forEach((item) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'thumb-wrap';
+
+    const t = document.createElement('div');
+    t.className = 'thumb';
+    t.style.backgroundImage = 'url("' + item.url + '")';
+    t.title = item.name || '';
+    wrap.appendChild(t);
+
+    if (item.own) {
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'thumb-del';
+      del.title = '删除这张';
+      del.textContent = '×';
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeOwnImage(item);
+      });
+      wrap.appendChild(del);
+    }
+
+    frag.appendChild(wrap);
+  });
+
+  if (imagePool.length > 90) {
+    const more = document.createElement('div');
+    more.style.cssText =
+      'grid-column:1/-1;font-size:12px;color:#a9a196;padding:6px 2px;';
+    more.textContent = `还有 ${imagePool.length - 90} 张未显示…`;
+    frag.appendChild(more);
+  }
+
+  thumbGrid.appendChild(frag);
+}
+
+async function addImageFiles(fileList) {
+  const files = Array.from(fileList || []).filter(
+    (f) => f.type && f.type.startsWith('image/')
+  );
+  if (!files.length) return;
+
+  const wasEmpty = imagePool.length === 0;
+  let added = 0;
+
+  for (const f of files) {
+    try {
+      if (f.size > 12 * 1024 * 1024) {
+        console.warn('图片太大，已跳过：', f.name);
+        continue;
+      }
+      const id = await dbAdd({
+        name: f.name,
+        blob: f,
+        type: f.type,
+        time: Date.now()
+      });
+      imagePool.push({
+        key: 'u' + id,
+        name: f.name,
+        url: URL.createObjectURL(f),
+        own: true,
+        id,
+        revoke: true
+      });
+      added++;
+    } catch (err) {
+      console.warn('保存失败：', f.name, err);
+    }
+  }
+
+  updateGalleryUI();
+
+  if (added && (wasEmpty || app.classList.contains('visible'))) {
+    applyRandomBackground();
+  }
+}
+
+async function removeOwnImage(item) {
+  if (item.revoke) URL.revokeObjectURL(item.url);
+
+  const k = imagePool.indexOf(item);
+  if (k > -1) imagePool.splice(k, 1);
+
+  try { await dbDelete(item.id); } catch (e) {}
+
+  if (!imagePool.length) {
+    bgEls.forEach((el) => {
+      el.classList.remove('on');
+      el.style.backgroundImage = 'none';
+    });
+  } else {
+    applyRandomBackground();
+  }
+  updateGalleryUI();
+}
+
+async function clearOwnImages() {
+  imagePool.forEach((it) => { if (it.revoke) URL.revokeObjectURL(it.url); });
+
+  for (let i = imagePool.length - 1; i >= 0; i--) {
+    if (imagePool[i].own) imagePool.splice(i, 1);
+  }
+
+  try { await dbClear(); } catch (e) {}
+
+  if (!imagePool.length) {
+    bgEls.forEach((el) => {
+      el.classList.remove('on');
+      el.style.backgroundImage = 'none';
+    });
+  } else {
+    applyRandomBackground();
+  }
+  updateGalleryUI();
+}
+
+function checkImage(url) {
+  return new Promise((resolve) => {
+    const im = new Image();
+    im.onload = () => resolve(true);
+    im.onerror = () => resolve(false);
+    im.src = url;
+  });
+}
+
+async function initBackgrounds() {
+  // 内置图
+  DEFAULT_IMAGES.forEach((path, i) => {
+    if (!path) return;
+    const item = {
+      key: 'd' + i,
+      name: String(path).split('/').pop(),
+      url: path,
+      own: false
+    };
+    imagePool.push(item);
+
+    checkImage(path).then((ok) => {
+      if (ok) return;
+      const k = imagePool.indexOf(item);
+      if (k > -1) imagePool.splice(k, 1);
+      updateGalleryUI();
+    });
+  });
+
+  updateGalleryUI();
+
+  // 用户上传过的图
+  try {
+    const rows = await dbAll();
+    rows.forEach((r) => {
+      if (!r || !r.blob) return;
+      imagePool.push({
+        key: 'u' + r.id,
+        name: r.name || '未命名',
+        url: URL.createObjectURL(r.blob),
+        own: true,
+        id: r.id,
+        revoke: true
+      });
+    });
+    updateGalleryUI();
+  } catch (e) {
+    console.warn('读取已保存图片失败：', e);
+  }
+
+  if (app.classList.contains('visible')) {
+    applyRandomBackground();
+  }
+}
+
+/* ---------- 图库面板事件 ---------- */
+$('#galleryBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  closePanel();
+  updateGalleryUI();
+  galleryModal.classList.add('open');
+});
+$('#galleryClose').addEventListener('click', () => galleryModal.classList.remove('open'));
+galleryModal.addEventListener('click', (e) => {
+  if (e.target === galleryModal) galleryModal.classList.remove('open');
+});
+
+$('#pickFolder').addEventListener('click', () => folderInput.click());
+$('#pickFiles').addEventListener('click', () => fileInput.click());
+$('#clearImgs').addEventListener('click', clearOwnImages);
+
+fileInput.addEventListener('change', () => {
+  addImageFiles(fileInput.files);
+  fileInput.value = '';
+});
+folderInput.addEventListener('change', () => {
+  addImageFiles(folderInput.files);
+  folderInput.value = '';
+});
+
+// 拖拽导入
+document.addEventListener('dragover', (e) => e.preventDefault());
+document.addEventListener('drop', (e) => {
+  e.preventDefault();
+  addImageFiles(e.dataTransfer.files);
+});
+
+/* ============================================================
+   ⑭ 投稿：写下你的九个字（localStorage 永久保存）
+   ============================================================ */
+const uwInput = $('#uwInput');
+const uwMsg = $('#uwMsg');
+
+function openWriteModal() {
+  uwMsg.textContent = '';
+  uwMsg.className = 'uw-msg';
+  writeModal.classList.add('open');
+  setTimeout(() => { try { uwInput.focus(); } catch (e) {} }, 60);
+}
+
+function closeWriteModal() {
+  writeModal.classList.remove('open');
+}
+
+$('#writeBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openWriteModal();
+});
+$('#uwCancel').addEventListener('click', closeWriteModal);
+writeModal.addEventListener('click', (e) => {
+  if (e.target === writeModal) closeWriteModal();
+});
+
+// 弹窗内打字时，别让外层快捷键抢走按键
+writeModal.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') e.stopPropagation();
+}, true);
+
+function submitSentence() {
+  const lines = uwInput.value.replace(/\r/g, '').split('\n')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  if (!lines.length) {
+    uwMsg.textContent = '第一行还没写呢。';
+    uwMsg.className = 'uw-msg';
+    return;
+  }
+
+  const body = lines[0];
+  let sign = lines.slice(1).join(' ').trim();
+
+  if (body.length > MAX_LINE_LEN) {
+    uwMsg.textContent = '第一行有点长了，精简一下吧。';
+    uwMsg.className = 'uw-msg';
+    return;
+  }
+
+  if (sign && !/^[-—–]{2}/.test(sign)) sign = '——' + sign;
+
+  if (sign.length > MAX_LINE_LEN) {
+    uwMsg.textContent = '署名有点长了，精简一下吧。';
+    uwMsg.className = 'uw-msg';
+    return;
+  }
+
+  const full = sign ? body + '\n' + sign : body;
+
+  if (SENTENCES.includes(full)) {
+    uwMsg.textContent = '这句已经在池子里啦，它会随机出现的。';
+    uwMsg.className = 'uw-msg ok';
+    return;
+  }
+
+  const list = loadOwnSentences();
+  if (list.length >= MAX_OWN_SENTENCES) {
+    uwMsg.textContent = '句子池满了，先到这里吧。';
+    uwMsg.className = 'uw-msg';
+    return;
+  }
+
+  list.push(full);
+  if (!saveOwnSentences(list)) {
+    uwMsg.textContent = '这台设备存不下来，换个浏览器再试试。';
+    uwMsg.className = 'uw-msg';
+    return;
+  }
+
+  SENTENCES.push(full);
+
+  // 立刻让新句子参与浮现
+  if (splashActive) layoutSplash();
+  if (app.classList.contains('visible') && currentIndex >= 0) {
+    layoutFloating(currentIndex);
+  }
+
+  uwInput.value = '';
+  uwMsg.textContent = '收好了，它会随机浮现在页面里。';
+  uwMsg.className = 'uw-msg ok';
+
+  setTimeout(closeWriteModal, 1100);
+}
+
+$('#uwSubmit').addEventListener('click', submitSentence);
+
+// Ctrl/Cmd + Enter 提交，普通 Enter 用来换行写署名
+uwInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    submitSentence();
+  }
+});
+
+/* ============================================================
+   ⑮ 键盘快捷键
+   ============================================================ */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closePanel();
+    galleryModal.classList.remove('open');
+    writeModal.classList.remove('open');
+    aboutPage.classList.remove('open');
+    searchInput.blur();
+    return;
+  }
+
+  if (aboutPage.classList.contains('open')) return;
+  if (galleryModal.classList.contains('open')) return;
+  if (writeModal.classList.contains('open')) return;
+
+  const inInput = e.target === searchInput;
+
+  if (inInput) {
+    if (e.key === 'Enter') closePanel();
+    return;
+  }
+
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (app.classList.contains('visible')) rollOnce();
+  } else if (e.key === '/') {
+    e.preventDefault();
+    if (app.classList.contains('visible')) searchInput.focus();
+  }
+});
+
+/* ============================================================
+   ⑯ 窗口尺寸变化
+   ============================================================ */
+window.addEventListener('resize', debounce(() => {
+  if (cardFront.textContent) {
+    const body = cardFront.textContent.split('\n')[0];
+    cardFront.style.fontSize = fitFontSize(body) + 'px';
+  }
+  if (cardBack.textContent) {
+    const body = cardBack.textContent.split('\n')[0];
+    cardBack.style.fontSize = fitFontSize(body) + 'px';
+  }
+  if (splashActive) layoutSplash();
+  if (app.classList.contains('visible')) layoutFloating(currentIndex);
+}, 220));
+
+/* ============================================================
+   ⑰ 启动
+   ============================================================ */
+layoutSplash();
+initBackgrounds();
+
+window.addEventListener('beforeunload', () => {
+  imagePool.forEach((it) => { if (it.revoke) URL.revokeObjectURL(it.url); });
+});
+</script>
+</body>
+</html> 
